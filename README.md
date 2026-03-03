@@ -26,11 +26,11 @@ The system features a robust backend (FastAPI + PostgreSQL) to securely manage c
 - **Data Manipulation:** Pandas
 
 ## 👥 Team (İleri Programlama Teknikleri)
-- **Scrum Master:** [Your Name]
-- **Developer:** [Member 2 Name]
-- **Developer:** [Member 3 Name]
-- **Developer:** [Member 4 Name]
-- **Developer:** [Member 5 Name]
+- **Scrum Master:** Amir
+- **Developer:** Eyup
+- **Developer:** Reyyan
+- **Developer:** Nurullah
+- **Developer:** Hediye
 
 ---
 *Developed for the İleri Programlama Teknikleri course.*
