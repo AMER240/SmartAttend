@@ -1,6 +1,6 @@
 # SmartAttend Web
 
-Yüz tanımalı yoklama sisteminin web frontend'i.
+SmartAttend yüz tanıma yoklama sisteminin React frontend'i.
 
 ## Stack
 - React 19 + TypeScript
@@ -8,25 +8,25 @@ Yüz tanımalı yoklama sisteminin web frontend'i.
 - Tailwind v4
 - React Router 7
 - TanStack React Query 5
-- lucide-react ikonlar
+- lucide-react (ikonlar)
 - Tarayıcı `getUserMedia` (kamera) + Canvas2D (kare yakalama)
 
 ## Geliştirme
 
 ```bash
-cd web
+cd frontend
 npm install
-copy .env.example .env.local         # Windows
-# cp .env.example .env.local         # macOS/Linux
+copy .env.example .env         # Windows
+# cp .env.example .env         # macOS/Linux
 npm run dev
 ```
 
-Vite `http://0.0.0.0:3000` üzerinde dinler. Backend'in çalışıyor olduğundan emin
-ol (`backend/` klasöründe `python -m app.main`).
+Vite `http://0.0.0.0:3000` üzerinde dinler. Backend'in
+(`uvicorn backend.main:app --port 8000`) ayakta olduğundan emin olun.
 
 ## Ortam Değişkenleri
 
-`.env.local` dosyasında:
+`.env` dosyasında:
 
 ```
 VITE_API_URL=http://localhost:8000
@@ -54,28 +54,34 @@ npm run preview     # üretim sunucusunu yerelde test et
 
 ```
 src/
-├── App.tsx                    Router
-├── main.tsx                   QueryClient + AuthProvider
-├── index.css                  Tailwind + tasarım tokenları
+├── App.tsx                    Router (BrowserRouter)
+├── main.tsx                   QueryClient + AuthProvider + ToastProvider
+├── index.css                  Tailwind + Material You tema değişkenleri
 ├── lib/
-│   ├── api.ts                 fetch wrapper, token saklama
-│   ├── auth-context.tsx       Auth context + useAuth
-│   ├── queries.ts             React Query hook'ları
-│   └── types.ts               Backend ile uyumlu TS tipleri
+│   ├── api.ts                 fetch wrapper + hata logger'ı
+│   ├── auth-context.tsx       "Demo Hoca" sahte auth (backend'de auth yok)
+│   ├── queries.ts             React Query hook'ları (backend adapter)
+│   └── types.ts               UI'ın beklediği veri şekilleri
 ├── components/
-│   ├── ProtectedRoute.tsx     Auth guard
-│   ├── CameraCapture.tsx      Tek-shot kamera (öğrenci kaydı için)
-│   ├── Modal.tsx, ConfirmDialog.tsx, Toast.tsx, LoadingState.tsx
+│   ├── ProtectedRoute.tsx     (auth bypass: çocukları olduğu gibi render)
+│   ├── CameraCapture.tsx      Öğrenci kaydı için tek-shot kamera
+│   ├── Modal.tsx
+│   ├── ConfirmDialog.tsx
+│   ├── Toast.tsx
+│   ├── LoadingSpinner.tsx
+│   └── LoadingState.tsx
 ├── layouts/
-│   └── DashboardLayout.tsx
+│   └── DashboardLayout.tsx    Üst bar + sayfa Outlet'i
 └── pages/
-    ├── Login.tsx              Giriş + Kayıt Ol
-    ├── Dashboard.tsx          Anasayfa, aktif oturumlar
-    ├── Courses.tsx            Ders listesi
-    ├── CourseDetail.tsx       Şube/öğrenci/oturum yönetimi
+    ├── Login.tsx              Auth bypass: /dashboard'a yönlendirir
+    ├── Dashboard.tsx          Anasayfa, aktif oturumlar, derslerim
+    ├── Courses.tsx            Ders listesi + ekle/sil
+    ├── CourseForm.tsx         Yeni / düzenleme formu
+    ├── CourseDetail.tsx       Ders detayı + öğrenci ekle + oturum geçmişi
     ├── Students.tsx           Tüm öğrenciler
-    ├── Scanner.tsx            Canlı kamera + recognize
-    ├── History.tsx            Oturum geçmişi
-    ├── SessionDetail.tsx      Oturum detayı + manuel düzeltme
-    └── Settings.tsx           Profil, tema, çıkış
+    ├── StudentForm.tsx        Yeni öğrenci kaydı (kamera fotoğraflı)
+    ├── Scanner.tsx            Canlı kamera + 2.5sn'de bir recognize
+    ├── History.tsx            Oturum geçmişi listesi
+    ├── SessionDetail.tsx      Oturum detayı + manuel Mevcut/Yok/Geç
+    └── Settings.tsx           Tema seçimi + API bilgisi
 ```

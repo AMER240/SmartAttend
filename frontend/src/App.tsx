@@ -7,7 +7,6 @@ import CourseForm from './pages/CourseForm';
 import Courses from './pages/Courses';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
-import Kiosk from './pages/Kiosk';
 import Login from './pages/Login';
 import Scanner from './pages/Scanner';
 import SessionDetail from './pages/SessionDetail';
@@ -20,9 +19,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-
-        {/* Public student self check-in — no auth required */}
-        <Route path="/kiosk/:sessionId" element={<Kiosk />} />
 
         <Route
           path="/scanner/:sessionId"
