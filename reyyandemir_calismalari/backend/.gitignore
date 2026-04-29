@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.env
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Runtime artefacts
+smartattend.db
+smartattend.db-journal
+uploads/
