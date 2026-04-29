@@ -1,4 +1,4 @@
-# SmartAttend — Otomatik Yüz Tanıma Yoklama Sistemi
+# SmartAttend — Automated Face-Recognition Attendance System
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688)
@@ -8,152 +8,148 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791)
 ![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8)
 
-## 1. Proje Özeti
+## 1. Project Overview
 
-**SmartAttend**, üniversite derslerindeki manuel yoklama sürecini ortadan
-kaldırmak için tasarlanmış, web tabanlı, gerçek zamanlı bir yoklama yönetim
-sistemidir.
+**SmartAttend** is a web-based, real-time attendance management system designed
+to eliminate the manual roll-call process in university classrooms.
 
-* **Arka Uç (FastAPI + SQLAlchemy + PostgreSQL)** öğrencileri, dersleri,
-  oturumları ve yoklama kayıtlarını saklar; REST API olarak sunar.
-* **Yapay Zekâ Motoru (OpenCV + face_recognition)** kameradan gelen kareleri
-  128-boyutlu yüz vektörlerine çevirir ve veritabanındaki kayıtlı öğrencilerle
-  eşleştirir.
-* **Ön Yüz (React 19 + TypeScript + Vite + TailwindCSS 4 + TanStack Query)**
-  öğretim üyelerine modern, mobil-uyumlu bir kontrol paneli sunar:
-  Dashboard, dersler, öğrenciler, canlı tarayıcı (Scanner), geçmiş oturumlar
-  ve manuel düzeltmeler tek bir SPA içinde.
+* **Backend (FastAPI + SQLAlchemy + PostgreSQL)** stores students, courses,
+  sessions and attendance records and exposes them as a REST API.
+* **AI Engine (OpenCV + face_recognition)** turns webcam frames into 128-D
+  face vectors and matches them against the registered students in the DB.
+* **Frontend (React 19 + TypeScript + Vite + TailwindCSS 4 + TanStack Query)**
+  provides instructors with a modern, mobile-friendly SPA: dashboard, courses,
+  students, live scanner, session history and manual overrides — all in one
+  place.
 
-## 2. Mimari
+## 2. Architecture
 
 ```
-+----------------------+        HTTP/JSON        +----------------------+
-|                      | ----------------------> |                      |
-|   React 19 + Vite    |  GET  /courses/         |   FastAPI Backend    |
-|   (frontend, port    |  POST /students/        |   (port 8000)        |
-|     3000)            |  POST /sessions/start   |                      |
-|                      |  POST /attendance/      |                      |
-|                      |       live_match        |                      |
-+----------+-----------+                         +----------+-----------+
-           |                                                |
-           v                                                v
-   webcam (getUserMedia)                  +-----------------+----------------+
-   2.5sn'de bir kare → backend            |  SQLAlchemy ORM (psycopg2)       |
-                                          |              ↓                   |
-                                          |   PostgreSQL Database            |
-                                          +-----------------+----------------+
-                                                            |
-                                                            v
-                                          +----------------------------------+
-                                          |  AI Engine (face_matcher.py)     |
-                                          |  OpenCV + face_recognition       |
-                                          +----------------------------------+
++----------------------+        HTTP / JSON        +----------------------+
+|                      | ------------------------> |                      |
+|   React 19 + Vite    |  GET  /courses/           |   FastAPI Backend    |
+|   (frontend, port    |  POST /students/          |   (port 8000)        |
+|     3000)            |  POST /sessions/start     |                      |
+|                      |  POST /attendance/        |                      |
+|                      |       live_match          |                      |
++----------+-----------+                           +----------+-----------+
+           |                                                  |
+           v                                                  v
+   webcam (getUserMedia)                    +-----------------+----------------+
+   one frame every 2.5 s → backend          |  SQLAlchemy ORM (psycopg2)       |
+                                            |              |                   |
+                                            |              v                   |
+                                            |       PostgreSQL Database        |
+                                            +-----------------+----------------+
+                                                              |
+                                                              v
+                                            +----------------------------------+
+                                            |  AI Engine (face_matcher.py)     |
+                                            |  OpenCV + face_recognition       |
+                                            +----------------------------------+
 ```
 
-## 3. Klasör Yapısı
+## 3. Folder Structure
 
 ```
 SmartAttend/
 ├── backend/                      # Python · FastAPI · SQLAlchemy · OpenCV
-│   ├── main.py                   # FastAPI uygulaması & rotalar
-│   ├── database.py               # SQLAlchemy engine + Session + Base
-│   ├── models.py                 # ORM tabloları (4 ana tablo)
-│   ├── schemas.py                # Pydantic veri doğrulama sınıfları
-│   ├── seed_demo_data.py         # Demo veri yükleme scripti
+│   ├── main.py                   # FastAPI app & routes
+│   ├── database.py               # SQLAlchemy engine, Session, Base
+│   ├── models.py                 # ORM tables (4 main tables)
+│   ├── schemas.py                # Pydantic request/response models
+│   ├── seed_demo_data.py         # Optional demo-data loader script
 │   └── ai_engine/
-│       └── face_matcher.py       # OpenCV / face_recognition entegrasyonu
+│       └── face_matcher.py       # OpenCV / face_recognition glue code
 │
 ├── frontend/                     # React 19 · TypeScript · Vite · Tailwind
 │   ├── index.html
-│   ├── package.json              # Node bağımlılıkları
+│   ├── package.json              # Node dependencies
 │   ├── vite.config.ts            # Vite + Tailwind plugin
 │   ├── tsconfig.json
 │   └── src/
-│       ├── main.tsx              # React entry point + QueryClientProvider
-│       ├── App.tsx               # React Router (BrowserRouter) yapılandırması
-│       ├── index.css             # Tailwind + Material You tema değişkenleri
-│       ├── components/           # Toast, Modal, ConfirmDialog, vs.
+│       ├── main.tsx              # React entry + QueryClient + Toast provider
+│       ├── App.tsx               # React Router (BrowserRouter) setup
+│       ├── index.css             # Tailwind + Material You theme tokens
+│       ├── components/           # Toast, Modal, ConfirmDialog, etc.
 │       ├── layouts/
-│       │   └── DashboardLayout.tsx  # Üst navigasyon çubuğu + alt sekme
+│       │   └── DashboardLayout.tsx
 │       ├── lib/
-│       │   ├── api.ts            # `apiRequest` HTTP istemcisi
-│       │   ├── auth-context.tsx  # Sahte teacher (auth bypass)
-│       │   ├── queries.ts        # TanStack hooks → backend adapter katmanı
-│       │   └── types.ts          # React tarafının veri şekilleri
-│       └── pages/                # Dashboard, Courses, Students, Scanner, vs.
+│       │   ├── api.ts            # Tiny `apiRequest` HTTP client
+│       │   ├── auth-context.tsx  # Fake "Demo Teacher" (auth bypassed)
+│       │   ├── queries.ts        # TanStack hooks → backend adapter layer
+│       │   └── types.ts          # UI-side data shapes
+│       └── pages/                # Dashboard, Courses, Students, Scanner, ...
 │
-├── frontend-streamlit/           # (Yedek) eski Streamlit ön yüzü, kullanılmıyor
-├── requirements.txt              # Tüm Python bağımlılıkları
-├── .env.example                  # Backend ortam değişkenleri şablonu
+├── requirements.txt              # All Python dependencies
+├── .env.example                  # Backend env template
 ├── .gitignore
-└── README.md                     # Bu dosya
+└── README.md                     # This file
 ```
 
-> `frontend-streamlit/` klasörü, projenin önceki Streamlit prototipidir.
-> Sadece referans amacıyla saklanıyor; çalıştırılması gerekmiyor.
+## 4. Database Schema
 
-## 4. Veritabanı Şeması
-
-| Tablo            | Sütunlar (PK / FK / vb.) |
-|------------------|---------------------------|
+| Table            | Columns (PK / FK / etc.) |
+|------------------|--------------------------|
 | `students`       | `student_id` (PK, String) · `full_name` (String) · `face_encoding` (LargeBinary) |
 | `courses`        | `course_id` (PK, Int) · `course_name` (String) · `course_code` (String, unique) |
 | `sessions`       | `session_id` (PK, Int) · `course_id` (FK) · `session_date` (Date) · `is_active` (Bool) |
-| `attendance_log` | `log_id` (PK, Int) · `session_id` (FK) · `student_id` (FK) · `status` (`Present`/`Absent`) · `check_in_time` (DateTime) |
+| `attendance_log` | `log_id` (PK, Int) · `session_id` (FK) · `student_id` (FK) · `status` (`Present` / `Absent`) · `check_in_time` (DateTime) |
 
-Tablolar uygulama açılırken `Base.metadata.create_all` ile otomatik oluşturulur.
+Tables are created automatically at startup via `Base.metadata.create_all`.
 
-## 5. API Sözleşmesi (Contract)
+## 5. API Contract
 
-| Method | Endpoint                              | Açıklama |
-|--------|---------------------------------------|----------|
-| POST   | `/students/`                          | Yeni öğrenci ekler (multipart: `student_id`, `full_name`, `photo`). |
-| GET    | `/students/`                          | Tüm öğrencileri listeler. |
-| DELETE | `/students/{student_id}`              | Öğrenciyi siler. |
-| GET    | `/courses/`                           | Tüm dersleri listeler. |
-| POST   | `/courses/`                           | Yeni ders ekler. |
-| GET    | `/courses/{course_id}`                | Tek ders detayı. |
-| DELETE | `/courses/{course_id}`                | Dersi siler (cascade). |
-| GET    | `/sessions/`                          | Tüm oturumları listeler. |
-| GET    | `/sessions/active`                    | Sadece aktif (devam eden) oturumlar. |
-| GET    | `/sessions/{session_id}`              | Tek oturum detayı. |
-| POST   | `/sessions/start`                     | Yeni yoklama oturumu başlatır. |
-| POST   | `/sessions/end/{session_id}`          | Oturumu kapatır, eksikleri otomatik `Absent` yapar. |
-| DELETE | `/sessions/{session_id}`              | Oturumu siler. |
-| GET    | `/sessions/{session_id}/log`          | Oturumun yoklama listesini döner. |
-| POST   | `/attendance/live_match`              | Kameradan gelen kareyi (`session_id` + `frame`) DB ile eşleştirir, eşleşeni `Present` yapar. |
-| PATCH  | `/attendance/{log_id}`                | Tek satırın statüsünü günceller (React Scanner manuel mod için). |
-| PUT    | `/attendance/override`                | Hocanın manuel `Present`/`Absent` düzeltmesi (legacy). |
+| Method | Endpoint                              | Description |
+|--------|---------------------------------------|-------------|
+| POST   | `/students/`                          | Register a new student (multipart: `student_id`, `full_name`, `photo`). |
+| GET    | `/students/`                          | List all students. |
+| DELETE | `/students/{student_id}`              | Delete a student (and their attendance rows). |
+| GET    | `/courses/`                           | List all courses. |
+| POST   | `/courses/`                           | Create a new course. |
+| GET    | `/courses/{course_id}`                | Get a single course. |
+| DELETE | `/courses/{course_id}`                | Delete a course (cascades to its sessions). |
+| GET    | `/sessions/`                          | List all sessions. |
+| GET    | `/sessions/active`                    | List only active (in-progress) sessions. |
+| GET    | `/sessions/{session_id}`              | Get a single session. |
+| POST   | `/sessions/start`                     | Open a new attendance session for a course. |
+| POST   | `/sessions/end/{session_id}`          | Close a session; mark missing students as `Absent`. |
+| DELETE | `/sessions/{session_id}`              | Delete a session and its log. |
+| GET    | `/sessions/{session_id}/log`          | Return the attendance log for a session. |
+| POST   | `/attendance/live_match`              | Match a webcam frame (`session_id` + `frame`) against the DB and mark the recognised student `Present`. |
+| PATCH  | `/attendance/{log_id}`                | Update a single row's status (used by the manual marking UI). Accepts `present` / `absent` / `late`. |
+| PUT    | `/attendance/override`                | Legacy manual override endpoint (kept for backwards compatibility). |
 
-Detaylı şema ve örnek istek/yanıtlar için `http://127.0.0.1:8000/docs`
-(otomatik Swagger UI) sayfasını ziyaret edin.
+Full request / response schemas are available at
+`http://127.0.0.1:8000/docs` (auto-generated Swagger UI).
 
-## 6. Yerel Kurulum (Step-by-step)
+## 6. Local Setup (step-by-step)
 
-> Tahmini süre: yaklaşık 15 dakika.
+> Estimated time: about 15 minutes.
 
-### 6.1 Ön gereksinimler
-* Python **3.12** (önemli: 3.13/3.14 ile `dlib` wheel'i yok – derleme gerekir)
-* Node.js **20+ (LTS)** ve npm
-* PostgreSQL **14+** kurulu ve çalışıyor
-* Webcam erişimi (canlı yoklama için)
+### 6.1 Prerequisites
+* Python **3.12** (important: 3.13/3.14 have no prebuilt `dlib` wheel — would
+  require a C++ compiler)
+* Node.js **20+ (LTS)** and npm
+* PostgreSQL **14+** installed and running
+* A working webcam (for live attendance)
 
-### 6.2 Depoyu klonla
+### 6.2 Clone the repo
 ```powershell
 git clone <repo-url> SmartAttend
 cd SmartAttend
 ```
 
-### 6.3 Backend — Sanal ortam + bağımlılıklar
+### 6.3 Backend — virtual environment + dependencies
 
 **Windows (PowerShell):**
 ```powershell
 py -3.12 -m venv venv
 
-# Activate.ps1 engellenirse:
+# If Activate.ps1 is blocked by execution policy:
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-# Aktivasyona gerek yok – venv'in python'unu doğrudan kullan:
+# You don't actually need to activate — just call the venv's python directly:
 .\venv\Scripts\python.exe -m pip install --upgrade pip
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
 .\venv\Scripts\python.exe -m pip install --no-deps face_recognition
@@ -168,111 +164,112 @@ pip install -r requirements.txt
 pip install --no-deps face_recognition
 ```
 
-> **Neden `--no-deps`?** `face_recognition` paketinin metadata'sında `dlib`
-> (kaynak paket) yazılı, ama biz `dlib-bin` (precompiled wheel) kullanıyoruz.
-> `--no-deps` olmadan pip dlib'i kaynaktan derlemeye çalışır ve C++ compiler ister.
+> **Why `--no-deps`?** The `face_recognition` package's metadata declares
+> `dlib` (the source distribution) as a dependency, but we use `dlib-bin`
+> (a precompiled wheel) instead. Without `--no-deps`, pip will try to compile
+> dlib from source and demand a C++ compiler.
 
-### 6.4 PostgreSQL veritabanı oluştur
+### 6.4 Create the PostgreSQL database
 ```sql
 CREATE DATABASE smartattend;
--- (opsiyonel) ayrı bir kullanıcı:
+-- (optional) create a dedicated user:
 CREATE USER smartattend_user WITH PASSWORD 'changeme';
 GRANT ALL PRIVILEGES ON DATABASE smartattend TO smartattend_user;
 ```
 
-### 6.5 Backend ortam değişkenlerini ayarla
+### 6.5 Configure backend env
 ```powershell
 copy .env.example .env
-# .env içindeki DATABASE_URL'yi kendi kullanıcı/şifrenize göre düzenleyin.
+# Then edit .env and set DATABASE_URL with your real DB user/password.
 ```
 
-Örnek `.env`:
+Example `.env`:
 ```
 DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@127.0.0.1:5432/smartattend
-SMARTATTEND_API_URL=http://127.0.0.1:8000
 ```
 
-### 6.6 (Opsiyonel) Demo verileri yükle
+### 6.6 (Optional) Load demo data
 ```powershell
 .\venv\Scripts\python.exe -m backend.seed_demo_data
 ```
-Bu, 3 ders ve 3 öğrenciyi sahte yüz vektörleriyle veritabanına ekler. Gerçek
-canlı yoklama için bu öğrencilerin yüz fotoğraflarını **React › Öğrenciler ›
-Yeni Öğrenci** ekranından tekrar kaydetmelisiniz (gerçek `face_encoding` üretilir).
+This inserts 3 courses and 3 students with placeholder face vectors. For real
+live attendance to work, you must re-register those students from
+**Frontend › Students › New Student** so a real `face_encoding` gets generated
+from a real photo.
 
-### 6.7 Frontend — Node bağımlılıkları
+### 6.7 Frontend — Node dependencies
 ```powershell
 cd frontend
 npm install
 cd ..
 ```
 
-### 6.8 Backend'i başlat (Terminal #1)
+### 6.8 Start the backend (Terminal #1)
 ```powershell
 .\venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000
 ```
-Tarayıcıda `http://127.0.0.1:8000/docs` adresinden Swagger UI'a erişebilirsiniz.
+Swagger UI: `http://127.0.0.1:8000/docs`.
 
-### 6.9 Frontend'i başlat (Terminal #2)
+### 6.9 Start the frontend (Terminal #2)
 ```powershell
 cd frontend
 npm run dev
 ```
-Tarayıcıda `http://localhost:3000` otomatik açılır. Üst navigasyondan
-**Panel / Dersler / Öğrenciler / Geçmiş / Ayarlar** sayfaları arasında
-geçiş yapın.
+The browser will open `http://localhost:3000` automatically. Use the top nav
+to move between **Dashboard / Courses / Students / History / Settings**.
 
-> Frontend, backend'i `VITE_API_URL` (varsayılan: `http://localhost:8000`)
-> üzerinden çağırır. Farklı bir host/port kullanmak için
-> `frontend/.env` dosyasını oluşturup `VITE_API_URL=...` ekleyin.
+> The frontend talks to the backend via `VITE_API_URL`
+> (default `http://localhost:8000`). To use a different host/port, create
+> `frontend/.env` with `VITE_API_URL=...`.
 
-## 7. Tipik Kullanım Akışı
+## 7. Typical Workflow
 
-1. **Panel** ekranındaki **Yeni Ders** ile bir ders ekleyin
-   (ör. `BIL301 – İleri Programlama`).
-2. **Öğrenci Ekle** ile her öğrenciyi numara, ad-soyad ve net bir yüz
-   fotoğrafıyla kaydedin (Camera Capture bileşeni hem dosyadan hem canlı
-   webcam'den fotoğraf alabilir).
-3. **Panel › Derslerim** kısmından şubenin (`A`) **Başlat** butonuna basın
-   → otomatik olarak Scanner ekranına yönlendirilirsiniz.
-4. **Scanner** sayfasında kamera açılır, 2.5 saniyede bir kare
-   `/attendance/live_match` endpoint'ine gönderilir, eşleşen öğrenci
-   `Present` olarak işaretlenir. Manuel olarak da **Manuel İşaretle**
-   panelinden statü değiştirebilirsiniz.
-5. **Yoklamayı Bitir** → eksikler otomatik `Absent` olur, **Geçmiş**
-   sayfasında oturumun raporunu görebilirsiniz.
+1. From the **Dashboard**, click **New Course** to create one
+   (e.g. `CS301 – Advanced Programming`).
+2. Use **New Student** to register each student with a name, student number
+   and a clear face photo (the `CameraCapture` component supports both file
+   upload and live webcam capture).
+3. From **Dashboard › My Courses**, hit the branch's **Start** button — you
+   are redirected to the Scanner screen.
+4. On the **Scanner** page the camera opens and one frame every 2.5 s is sent
+   to `/attendance/live_match`. Recognised students are marked `Present`
+   automatically. You can also flip statuses manually from the **Manual Mark**
+   panel.
+5. Click **End Attendance** → missing students get `Absent`, and the session
+   report becomes available on the **History** page.
 
-## 8. Mimari Notlar / Tasarım Kararları
+## 8. Architectural Notes / Design Decisions
 
-* **Auth bypass:** Bu sürümde JWT auth yoktur. Frontend, sahte bir
-  "Demo Hoca" hesabıyla kullanıcıyı her zaman "girişli" gösterir
-  (`frontend/src/lib/auth-context.tsx`). Çoklu kullanıcı / yetkilendirme
-  ileride eklenebilir.
-* **Şube (Branch) sistemi:** Backend'de yoktur. Frontend, her dersi
-  tek bir varsayılan şube (`Genel / A`, `branch_id == course_id`) ile
-  gösterir. Adapter mantığı `lib/queries.ts` içindedir.
-* **ID Eşleme:** Backend `student_id` String, React tarafı `id: number`
-  bekler. Adapter `Number(student_id)` ile çevirir; sayısal olmayan ID'ler
-  için deterministik 32-bit hash kullanılır. Orijinal string ID
-  `student_number` alanında muhafaza edilir.
+* **Auth bypass:** This build has no JWT authentication. The frontend always
+  shows the user as logged in via a fake "Demo Teacher" account (see
+  `frontend/src/lib/auth-context.tsx`). Multi-user / role-based access can be
+  layered on later.
+* **Branches:** The backend has no concept of branches. The frontend exposes
+  a single virtual branch (`Genel / A`, with `branch_id == course_id`) per
+  course. The adapter logic lives in `frontend/src/lib/queries.ts`.
+* **ID mapping:** Backend `student_id` is a String, while the React side
+  expects a numeric `id`. The adapter converts via `Number(student_id)` and
+  falls back to a deterministic 32-bit hash for non-numeric IDs. The original
+  string is preserved as `student_number`.
 
-## 9. Hata Ayıklama / Sorun Giderme
+## 9. Troubleshooting
 
-| Hata | Çözüm |
-|------|-------|
-| `Could not initialize database tables` | `.env` içindeki `DATABASE_URL` doğru mu? PostgreSQL servisi çalışıyor mu? |
-| `Failed building wheel for dlib` | Python 3.13/3.14 kullanıyorsunuz. **Python 3.12'ye düşürün** ve `dlib-bin` wheel'ini kullanın. |
-| `Please install face_recognition_models …` | `pip install "setuptools<80"` çalıştırın. setuptools 81+ `pkg_resources`'ı kaldırdı. |
-| `Activate.ps1 cannot be loaded` | `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` veya aktivasyon yerine `.\venv\Scripts\python.exe`'yi doğrudan kullanın. |
-| `npm: command not found` | Node.js LTS'i kurun: `winget install -e --id OpenJS.NodeJS.LTS`. Ardından **terminal'i yeniden açın** (PATH güncellenir). |
-| Frontend "Backend unreachable" gösteriyor | FastAPI 8000'de açık mı? Tarayıcı konsolunda CORS hatası varsa backend `--reload` ile yeniden başlatılmalı. |
-| Kamera açılmıyor | Tarayıcıya kamera izni verdiniz mi? `localhost` HTTP olduğu için Chrome bazı durumlarda izin istemiyor olabilir. Site izinlerinden manuel açın. |
-| `No face detected in the provided photo` | Daha aydınlık ve yüzü tam karşıdan gösteren bir fotoğraf yükleyin. |
+| Error | Fix |
+|-------|-----|
+| `Could not initialize database tables` | Is `DATABASE_URL` correct in `.env`? Is the PostgreSQL service running? |
+| `Failed building wheel for dlib` | You're on Python 3.13/3.14. **Downgrade to Python 3.12** and use the `dlib-bin` wheel. |
+| `Please install face_recognition_models ...` | Run `pip install "setuptools<80"`. setuptools 81+ removed `pkg_resources`. |
+| `Activate.ps1 cannot be loaded` | Run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`, or just call `.\venv\Scripts\python.exe` directly without activating. |
+| `npm: command not found` | Install Node.js LTS (`winget install -e --id OpenJS.NodeJS.LTS`) and **reopen the terminal** so PATH refreshes. |
+| Frontend says "Backend unreachable" | Is FastAPI on port 8000? If the browser console shows a CORS error, restart the backend with `--reload`. |
+| Camera does not open | Did you grant the browser camera permission? Check site permissions; on `localhost` Chrome sometimes silently denies. |
+| `No face detected in the provided photo` | Use a brighter photo with the face fully facing the camera. |
+| `[WinError 10013] / 10048` on backend start | Another process is still bound to port 8000. Find it with `netstat -ano | findstr :8000` and kill its PID. |
 
-Backend, veritabanı bağlantısı koptuğunda veya CV kütüphaneleri yüklü
-olmadığında **çökmek yerine** anlamlı `503 Service Unavailable` döner.
+The backend returns a meaningful `503 Service Unavailable` instead of
+crashing when the database connection drops or the CV libraries are missing.
 
-## 10. Takım — İleri Programlama Teknikleri
+## 10. Team — Advanced Programming Techniques
 
 * **Scrum Master:** Amir
 * **Developer:** Eyup
@@ -281,4 +278,4 @@ olmadığında **çökmek yerine** anlamlı `503 Service Unavailable` döner.
 * **Developer:** Hediye
 
 ---
-*İleri Programlama Teknikleri dersi için geliştirilmiştir.*
+*Built for the "Advanced Programming Techniques" course.*

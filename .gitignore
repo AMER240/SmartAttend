@@ -30,8 +30,7 @@ Thumbs.db
 htmlcov/
 .pytest_cache/
 
-# --- Streamlit ---
-.streamlit/secrets.toml
-
-# --- Node (legacy) ---
+# --- Node (frontend build artefacts) ---
 node_modules/
+dist/
+build/
